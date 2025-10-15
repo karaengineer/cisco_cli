@@ -1,0 +1,39 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+
+# Test / coverage artifacts
+.pytest_cache/
+.coverage
+coverage.xml
+
+# IDE and editor folders
+.vscode/
+.idea/
+*.code-workspace
+
+# Operating system files
+Thumbs.db
+desktop.ini
+
+# Local data and generated outputs
+outputs/
+data/raw/
+data/*.xlsx
+data/*.csv
+
+# Secrets and environment files
+.env
+.env.*

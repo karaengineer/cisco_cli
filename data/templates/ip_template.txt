@@ -1,0 +1,4 @@
+# Duplicate this file and replace the example IPs with your own.
+# Keep one IP per line.
+10.10.10.10
+10.10.10.11

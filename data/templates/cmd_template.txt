@@ -1,0 +1,4 @@
+# Duplicate this file and list the commands you want to run.
+# One command per line.
+show version
+show ip interface brief
