@@ -26,6 +26,9 @@ output_lock = Lock()
 TRUE_VALUES = {"1", "true", "t", "yes", "y", "on"}
 FALSE_VALUES = {"0", "false", "f", "no", "n", "off"}
 CONFIG_SECTION = "cli"
+DEFAULT_COMMAND_TIMEOUT = 300.0
+DEFAULT_DELAY_FACTOR = 2.0
+DEFAULT_SESSION_TIMEOUT = 30.0
 
 
 def read_ip_list(file_path: Path) -> list[str]:
@@ -119,6 +122,9 @@ def merge_args_with_config(args: argparse.Namespace, config: Dict[str, str]) -> 
         "manual": parse_bool,
         "threads": int,
         "log_level": str,
+        "command_timeout": float,
+        "delay_factor": float,
+        "session_timeout": float,
     }
     nullable_fields = {"user", "ip_file", "cmds", "cmd_file", "output_dir"}
 
@@ -152,6 +158,9 @@ def connect_and_run_single(
     commands: list[str],
     combine_output: bool,
     output_dir: Path,
+    command_timeout: float,
+    delay_factor: float,
+    session_timeout: float,
 ) -> Dict[str, Any]:
     result: Dict[str, Any] = {"ip": ip, "success": True, "output": "", "error": ""}
     try:
@@ -161,6 +170,7 @@ def connect_and_run_single(
             "username": username,
             "password": password,
             "secret": enable,
+            "conn_timeout": session_timeout,
         }
         with ConnectHandler(**device) as ssh:
             ssh.enable()
@@ -168,7 +178,11 @@ def connect_and_run_single(
             fragments: list[str] = []
 
             for cmd in commands:
-                output = ssh.send_command_timing(cmd, read_timeout=300, delay_factor=2)
+                output = ssh.send_command_timing(
+                    cmd,
+                    read_timeout=command_timeout,
+                    delay_factor=delay_factor,
+                )
                 fragments.append(f"\n=== {hostname} ({ip}) - {cmd} ===\n{output}\n")
 
             result["hostname"] = hostname
@@ -198,6 +212,9 @@ def connect_and_run(
     combine_output: bool,
     output_dir: Path,
     max_threads: int,
+    command_timeout: float,
+    delay_factor: float,
+    session_timeout: float,
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     error_log: list[str] = []
@@ -208,7 +225,19 @@ def connect_and_run(
         with combined_path.open("w", encoding="utf-8") as combined_file:
             with ThreadPoolExecutor(max_workers=max_threads) as executor:
                 futures = [
-                    executor.submit(connect_and_run_single, ip, username, password, enable, commands, True, output_dir)
+                    executor.submit(
+                        connect_and_run_single,
+                        ip,
+                        username,
+                        password,
+                        enable,
+                        commands,
+                        True,
+                        output_dir,
+                        command_timeout,
+                        delay_factor,
+                        session_timeout,
+                    )
                     for ip in ip_list
                 ]
                 for future in as_completed(futures):
@@ -221,7 +250,19 @@ def connect_and_run(
     else:
         with ThreadPoolExecutor(max_workers=max_threads) as executor:
             futures = [
-                executor.submit(connect_and_run_single, ip, username, password, enable, commands, False, output_dir)
+                executor.submit(
+                    connect_and_run_single,
+                    ip,
+                    username,
+                    password,
+                    enable,
+                    commands,
+                    False,
+                    output_dir,
+                    command_timeout,
+                    delay_factor,
+                    session_timeout,
+                )
                 for ip in ip_list
             ]
             for future in as_completed(futures):
@@ -277,6 +318,24 @@ def main() -> None:
         default=None,
         help="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).",
     )
+    parser.add_argument(
+        "--command-timeout",
+        type=float,
+        default=None,
+        help=f"Read timeout in seconds for each command (default={DEFAULT_COMMAND_TIMEOUT}).",
+    )
+    parser.add_argument(
+        "--delay-factor",
+        type=float,
+        default=None,
+        help=f"Delay factor multiplier for Netmiko command execution (default={DEFAULT_DELAY_FACTOR}).",
+    )
+    parser.add_argument(
+        "--session-timeout",
+        type=float,
+        default=None,
+        help=f"Connection timeout in seconds when establishing SSH sessions (default={DEFAULT_SESSION_TIMEOUT}).",
+    )
 
     args = parser.parse_args()
 
@@ -308,7 +367,10 @@ def main() -> None:
 
     manual_mode = args.manual if args.manual is not None else False
     combine_output = args.combine if args.combine is not None else False
-    threads = args.threads if args.threads is not None else int(config_values.get("threads", 5))
+    threads = args.threads if args.threads is not None else 5
+    command_timeout = args.command_timeout if args.command_timeout is not None else DEFAULT_COMMAND_TIMEOUT
+    delay_factor = args.delay_factor if args.delay_factor is not None else DEFAULT_DELAY_FACTOR
+    session_timeout = args.session_timeout if args.session_timeout is not None else DEFAULT_SESSION_TIMEOUT
 
     if args.ip_file is None and not manual_mode:
         LOGGER.error("Anda harus memilih --ip-file atau --manual.")
@@ -356,7 +418,19 @@ def main() -> None:
         combine_output,
     )
 
-    connect_and_run(ip_list, args.user, password, enable, commands, combine_output, output_dir, threads)
+    connect_and_run(
+        ip_list,
+        args.user,
+        password,
+        enable,
+        commands,
+        combine_output,
+        output_dir,
+        threads,
+        command_timeout,
+        delay_factor,
+        session_timeout,
+    )
 
 
 if __name__ == "__main__":

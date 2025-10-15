@@ -69,8 +69,19 @@ def test_merge_args_with_config_applies_defaults():
         combine=None,
         threads=None,
         log_level=None,
+        command_timeout=None,
+        delay_factor=None,
+        session_timeout=None,
     )
-    config = {"user": "admin", "ip_file": "inputs/ip_sample.txt", "threads": "3", "combine": "true"}
+    config = {
+        "user": "admin",
+        "ip_file": "inputs/ip_sample.txt",
+        "threads": "3",
+        "combine": "true",
+        "command_timeout": "600",
+        "delay_factor": "3.5",
+        "session_timeout": "60",
+    }
 
     merged = cli.merge_args_with_config(args, config)
 
@@ -78,12 +89,15 @@ def test_merge_args_with_config_applies_defaults():
     assert merged.ip_file == "inputs/ip_sample.txt"
     assert merged.threads == 3
     assert merged.combine is True
+    assert merged.command_timeout == 600.0
+    assert merged.delay_factor == 3.5
+    assert merged.session_timeout == 60.0
 
 
 def test_load_config_reads_cli_section(tmp_path):
     config_file = tmp_path / "config.ini"
     config_file.write_text(
-        "[cli]\nuser = admin\nthreads = 7\ncombine = false\n",
+        "[cli]\nuser = admin\nthreads = 7\ncombine = false\ncommand_timeout = 500\n",
         encoding="utf-8",
     )
 
@@ -92,3 +106,4 @@ def test_load_config_reads_cli_section(tmp_path):
     assert data["user"] == "admin"
     assert data["threads"] == "7"
     assert data["combine"] == "false"
+    assert data["command_timeout"] == "500"

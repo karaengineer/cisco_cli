@@ -13,7 +13,10 @@ Python CLI toolset for running Netmiko commands against multiple Cisco devices. 
 ## Project Layout
 ```
 ./README.md
+./CHANGELOG.md
 ./requirements.txt
+./.github/workflows/
+    ci.yml
 ./show_cli/
     __init__.py
     main.py
@@ -62,6 +65,7 @@ python -m show_cli.main --user admin ^
 ```
 
 Provide your own credentials when prompted. Outputs and logs are placed in `outputs/<chosen-dir>`; compilation into a single file is available via `--combine`. Atur detail logging via `--log-level` (`DEBUG`, `INFO`, dsb).
+Gunakan flag tambahan seperti `--command-timeout`, `--delay-factor`, atau `--session-timeout` ketika perlu mengatur perilaku Netmiko langsung dari CLI.
 
 ### Using a Config File
 
@@ -73,6 +77,9 @@ cmd_file = inputs/show_sample.txt
 threads = 8
 combine = true
 log_level = INFO
+command_timeout = 300
+delay_factor = 2.0
+session_timeout = 30
 ```
 
 Simpan ke `data/templates/config_template.ini`, lalu panggil:
@@ -81,7 +88,7 @@ Simpan ke `data/templates/config_template.ini`, lalu panggil:
 show-cli --config data/templates/config_template.ini
 ```
 
-Argumen CLI yang diberikan secara eksplisit akan menimpa nilai dari file konfigurasi.
+Argumen CLI yang diberikan secara eksplisit akan menimpa nilai dari file konfigurasi. Anda juga dapat menambah parameter seperti `command_timeout`, `delay_factor`, atau `session_timeout` untuk menyesuaikan perilaku Netmiko tanpa mengubah kode.
 Jika file konfigurasi Anda berada di dalam `data/`, Anda juga bisa menuliskan hanya nama file-nya saja:
 
 ```bash
@@ -103,5 +110,9 @@ The suite exercises helper functions like file readers and output directory prep
 ## Documentation
 More detailed walkthroughs live under `docs/usage.md`. Expand this section with troubleshooting notes or runbooks as the project grows.
 
+## Future Work
+- Bungkus koneksi Netmiko dalam lapisan abstraksi agar mudah menambahkan vendor lain atau melakukan mocking saat pengujian integrasi.
+- Tambahkan tes integrasi yang memanfaatkan monkeypatch Netmiko untuk memastikan alur `connect_and_run` berfungsi tanpa perangkat fisik.
+
 ## License
-Distributed under the MIT License. See `LICENSE` for details.
+Distributed under a custom non-commercial license. You may use, modify, and share the code for non-commercial purposes, but only MIFTA may grant commercial rights. See `LICENSE` for full terms.

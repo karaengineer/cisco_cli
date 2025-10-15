@@ -56,6 +56,9 @@ cmd_file = inputs/show_sample.txt
 threads = 8
 combine = true
 log_level = INFO
+command_timeout = 300
+delay_factor = 2.0
+session_timeout = 30
 ```
 
 Then run:
@@ -70,6 +73,8 @@ If the configuration file sits inside `data/`, you can simply reference it by fi
 ```bash
 show-cli --config config.ini
 ```
+
+Tweak `command_timeout`, `delay_factor`, atau `session_timeout` bila perangkat membutuhkan waktu lebih lama untuk merespons.
 
 ## Testing
 ```bash
