@@ -11,7 +11,7 @@ Install dependencies:
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-# atau gunakan paket editabel + dependency dev
+# alternatively install the editable package (includes dev dependencies)
 pip install -e .[dev]
 ```
 
@@ -74,7 +74,7 @@ If the configuration file sits inside `data/`, you can simply reference it by fi
 show-cli --config config.ini
 ```
 
-Tweak `command_timeout`, `delay_factor`, atau `session_timeout` bila perangkat membutuhkan waktu lebih lama untuk merespons.
+Adjust `command_timeout`, `delay_factor`, or `session_timeout` when devices need more time to respond.
 
 ## Testing
 ```bash

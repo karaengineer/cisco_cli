@@ -37,7 +37,7 @@ def read_ip_list(file_path: Path) -> list[str]:
 
 
 def read_manual_ips() -> list[str]:
-    LOGGER.info("Masukkan IP manual (satu per baris, ketik 'DONE' untuk selesai):")
+    LOGGER.info("Enter IP addresses manually (one per line, type 'DONE' to finish):")
     ip_list: list[str] = []
     while True:
         line = input()
@@ -145,7 +145,7 @@ def merge_args_with_config(args: argparse.Namespace, config: Dict[str, str]) -> 
         try:
             namespace[attr] = caster(sanitized)
         except ValueError as exc:
-            raise ValueError(f"Konfigurasi tidak valid untuk '{attr}': {value}") from exc
+            raise ValueError(f"Invalid configuration value for '{attr}': {value}") from exc
 
     return argparse.Namespace(**namespace)
 
@@ -199,7 +199,7 @@ def connect_and_run_single(
     except Exception as exc:  # pylint: disable=broad-exception-caught
         result["success"] = False
         result["error"] = f"{ip}: {exc}"
-        LOGGER.error("Gagal memproses %s: %s", ip, exc)
+        LOGGER.error("Failed to process %s: %s", ip, exc)
     return result
 
 
@@ -292,7 +292,7 @@ def configure_logging(level: str) -> None:
     if isinstance(numeric_level, str):
         numeric_level = logging.INFO
         logging.basicConfig(level=numeric_level, format="%(asctime)s [%(levelname)s] %(message)s", force=True)
-        LOGGER.warning("Log level %s tidak dikenal, menggunakan INFO sebagai bawaan.", level)
+        LOGGER.warning("Log level %s not recognized; defaulting to INFO.", level)
     else:
         logging.basicConfig(level=numeric_level, format="%(asctime)s [%(levelname)s] %(message)s", force=True)
         LOGGER.debug("Logging configured at %s", level_name)
@@ -348,7 +348,7 @@ def main() -> None:
             config_values = load_config(Path(args.config))
             LOGGER.debug("Config values loaded: %s", config_values)
         except Exception as exc:  # pylint: disable=broad-exception-caught
-            LOGGER.error("Gagal memuat file konfigurasi %s: %s", args.config, exc)
+            LOGGER.error("Failed to load configuration %s: %s", args.config, exc)
             sys.exit(1)
 
     try:
@@ -362,7 +362,7 @@ def main() -> None:
     configure_logging(args.log_level or "INFO")
 
     if args.user is None:
-        LOGGER.error("Parameter user wajib diisi (argumen --user atau konfigurasi).")
+        LOGGER.error("A username is required (via --user or configuration).")
         sys.exit(1)
 
     manual_mode = args.manual if args.manual is not None else False
@@ -373,11 +373,11 @@ def main() -> None:
     session_timeout = args.session_timeout if args.session_timeout is not None else DEFAULT_SESSION_TIMEOUT
 
     if args.ip_file is None and not manual_mode:
-        LOGGER.error("Anda harus memilih --ip-file atau --manual.")
+        LOGGER.error("You must provide --ip-file or enable --manual.")
         sys.exit(1)
 
     if args.cmds is None and args.cmd_file is None:
-        LOGGER.error("Anda harus memberikan --cmds atau --cmd-file.")
+        LOGGER.error("You must provide --cmds or --cmd-file.")
         sys.exit(1)
 
     if args.cmd_file:
@@ -385,7 +385,7 @@ def main() -> None:
             cmd_path = resolve_data_file(args.cmd_file, "Command")
             commands = read_commands_from_file(cmd_path)
         except Exception as exc:  # pylint: disable=broad-exception-caught
-            LOGGER.error("Gagal membaca file command: %s", exc)
+            LOGGER.error("Failed to read command file: %s", exc)
             sys.exit(1)
     else:
         commands = [cmd.strip() for cmd in (args.cmds or "").split(",") if cmd.strip()]
@@ -398,7 +398,7 @@ def main() -> None:
             ip_path = resolve_data_file(args.ip_file, "IP list")
             ip_list = read_ip_list(ip_path)
         except Exception as exc:  # pylint: disable=broad-exception-caught
-            LOGGER.error("Gagal membaca file IP: %s", exc)
+            LOGGER.error("Failed to read IP file: %s", exc)
             sys.exit(1)
     else:
         ip_list = read_manual_ips()
@@ -407,12 +407,12 @@ def main() -> None:
     ip_list = list(dict.fromkeys(ip_list))
     deduped_count = len(ip_list)
     if deduped_count < original_count:
-        LOGGER.info("Duplikat terdeteksi. %s IP di-skip.", original_count - deduped_count)
+        LOGGER.info("Duplicate addresses detected. %s IPs skipped.", original_count - deduped_count)
 
     output_dir = prepare_output_dir(args.output_dir)
 
     LOGGER.info(
-        "Menjalankan perintah ke %s perangkat dengan %s thread (combine_output=%s).",
+        "Executing commands on %s devices with %s threads (combine_output=%s).",
         len(ip_list),
         threads,
         combine_output,
