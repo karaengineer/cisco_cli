@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "show-cli"
+version = "0.1.0"
+description = "CLI helpers for running Netmiko commands across Cisco devices."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Mifta" }]
+dependencies = [
+    "netmiko>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.scripts]
+show-cli = "show_cli.main:main"
+
+[tool.setuptools]
+packages = ["show_cli"]

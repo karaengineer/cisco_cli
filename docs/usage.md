@@ -11,6 +11,8 @@ Install dependencies:
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
+# atau gunakan paket editabel + dependency dev
+pip install -e .[dev]
 ```
 
 ## Preparing Data
@@ -22,23 +24,47 @@ Sample, commit-friendly files live in `data/inputs/` for quick demonstrations.
 
 ## Running the Tool
 
-### show_v3 (recommended)
 ```bash
-python src/show_v3.py --user <username> ^
+show-cli --user <username> ^
     --ip-file data/inputs/ip_sample.txt ^
     --cmd-file data/inputs/show_sample.txt ^
     --output-dir nightly-run --threads 10
 ```
 
-### show_v2 (legacy variant)
+Alternative: provide inline commands instead of a file.
+
 ```bash
-python src/show_v2.py --user <username> ^
+python -m show_cli.main --user <username> ^
     --ip-file data/inputs/ip_sample.txt ^
     --cmds "show version,show ip interface brief" ^
     --output-dir nightly-run --combine
 ```
 
-Both scripts prompt for `Password` and `Enable Password`, then spawn concurrent Netmiko sessions. Outputs appear under `outputs/<chosen-dir>`, alongside `connection_errors.txt` and `failed_ips.txt` if problems occurred.
+The CLI prompts for `Password` and `Enable Password`, then spawns concurrent Netmiko sessions. Outputs appear under `outputs/<chosen-dir>`, alongside `connection_errors.txt` and `failed_ips.txt` if problems occurred.
+
+Adjust verbosity with `--log-level` (e.g., `--log-level DEBUG`) when troubleshooting.
+
+## Using a Config File
+
+Create an INI file (defaults section `[cli]`) to pre-fill arguments:
+
+```ini
+[cli]
+user = admin
+ip_file = inputs/ip_sample.txt
+cmd_file = inputs/show_sample.txt
+threads = 8
+combine = true
+log_level = INFO
+```
+
+Then run:
+
+```bash
+show-cli --config data/templates/config_template.ini
+```
+
+CLI arguments override values from the config file when provided.
 
 ## Testing
 ```bash
