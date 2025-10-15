@@ -65,6 +65,11 @@ show-cli --config data/templates/config_template.ini
 ```
 
 CLI arguments override values from the config file when provided.
+If the configuration file sits inside `data/`, you can simply reference it by filename:
+
+```bash
+show-cli --config config.ini
+```
 
 ## Testing
 ```bash
@@ -75,4 +80,3 @@ The suite validates helper utilities like file readers and output directory crea
 ## Tips
 - Adjust `--threads` to match your environment capacity; avoid overwhelming network equipment.
 - Keep `outputs/` clean by deleting folders from previous runs after collecting artifacts.
-- Expand this document with troubleshooting guidance specific to your deployment.

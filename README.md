@@ -82,6 +82,11 @@ show-cli --config data/templates/config_template.ini
 ```
 
 Argumen CLI yang diberikan secara eksplisit akan menimpa nilai dari file konfigurasi.
+Jika file konfigurasi Anda berada di dalam `data/`, Anda juga bisa menuliskan hanya nama file-nya saja:
+
+```bash
+show-cli --config config.ini   # akan mencari di root proyek dan data/
+```
 
 ## Data Management
 - Put real/sensitive device lists in `data/raw/` (ignored by Git). Use the templates in `data/templates/` to track the required format.

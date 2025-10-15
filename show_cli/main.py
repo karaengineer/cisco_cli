@@ -79,15 +79,24 @@ def parse_bool(value: Any) -> bool:
     raise ValueError(f"Tidak dapat mengonversi '{value}' menjadi boolean.")
 
 
-def load_config(config_path: Path) -> Dict[str, str]:
+def load_config(config_path: Path | str) -> Dict[str, str]:
     candidate = Path(config_path)
-    if not candidate.is_absolute():
-        candidate = ROOT_DIR / candidate
-    if not candidate.is_file():
-        raise FileNotFoundError(f"Config file not found: {candidate}")
+    search_paths: list[Path]
+    if candidate.is_absolute():
+        search_paths = [candidate]
+    else:
+        search_paths = [
+            ROOT_DIR / candidate,
+            DATA_DIR / candidate,
+            candidate,
+        ]
+
+    resolved_path = next((path for path in search_paths if path.is_file()), None)
+    if resolved_path is None:
+        raise FileNotFoundError(f"Config file not found in: {', '.join(str(path) for path in search_paths)}")
 
     parser = configparser.ConfigParser()
-    parser.read(candidate, encoding="utf-8")
+    parser.read(resolved_path, encoding="utf-8")
 
     if parser.has_section(CONFIG_SECTION):
         data = dict(parser[CONFIG_SECTION])
@@ -95,7 +104,7 @@ def load_config(config_path: Path) -> Dict[str, str]:
         data = dict(parser.defaults())
 
     if not data:
-        raise ValueError(f"Config file {candidate} does not contain section [{CONFIG_SECTION}] or defaults.")
+        raise ValueError(f"Config file {resolved_path} does not contain section [{CONFIG_SECTION}] or defaults.")
 
     return {key.strip(): value for key, value in data.items()}
 
