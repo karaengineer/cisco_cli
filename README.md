@@ -32,45 +32,55 @@ Python-based CLI that automates Netmiko commands across multiple Cisco devices. 
 ./LICENSE
 ```
 
-## Getting Started
+## Installation
 ```bash
 python -m venv .venv
-.venv\Scripts\activate   # Windows
-pip install -r requirements.txt          # quick local experiments
-# alternatively install the editable package (includes dev dependencies)
-pip install -e .[dev]
+.venv\Scripts\activate            # Windows PowerShell
+# source .venv/bin/activate       # macOS / Linux
+
+pip install -r requirements.txt   # lightweight install for quick trials
+pip install -e .[dev]             # editable install with dev/test dependencies
 ```
 
 ## Usage
-Examples assume you're at the project root.
+All commands below assume you run them from the project root and the virtual environment is active.
+
+### Run with explicit arguments
+
+```powershell
+# Windows PowerShell (caret for line continuation)
+show-cli --user admin `
+    --ip-file data/inputs/ip_sample.txt `
+    --cmd-file data/inputs/show_sample.txt `
+    --output-dir demo_outputs
+```
 
 ```bash
-# Run via console script (after pip install -e .)
-show-cli --user admin ^
-    --ip-file data/inputs/ip_sample.txt ^
-    --cmd-file data/inputs/show_sample.txt ^
-    --output-dir demo_outputs
+# macOS / Linux (backslash for line continuation)
+show-cli --user admin \
+  --ip-file data/inputs/ip_sample.txt \
+  --cmd-file data/inputs/show_sample.txt \
+  --output-dir demo_outputs
+```
 
-# Run directly from source
-python -m show_cli.main --user admin ^
-    --ip-file data/inputs/ip_sample.txt ^
-    --cmd-file data/inputs/show_sample.txt ^
-    --output-dir demo_outputs
+Prefer to run straight from the source module?
 
-# Run with inline command list
-python -m show_cli.main --user admin ^
-    --ip-file data/inputs/ip_sample.txt ^
-    --cmds "show version,show ip interface brief" ^
+```powershell
+python -m show_cli.main --user admin `
+    --ip-file data/inputs/ip_sample.txt `
+    --cmds "show version,show ip interface brief" `
     --output-dir demo_outputs --threads 5
 ```
 
-Provide your own credentials when prompted. Outputs and logs land in `outputs/<chosen-dir>`; combine everything into one file with `--combine`. Fine-tune Netmiko behaviour from the CLI using `--log-level`, `--command-timeout`, `--delay-factor`, or `--session-timeout`.
+During execution you will be prompted for `Password` and `Enable Password`. The tool writes one log file per device (unless `--combine` is set) and captures failures inside `outputs/<chosen-dir>/connection_errors.txt` and `failed_ips.txt`. Tune Netmiko behaviour on the fly with `--log-level`, `--command-timeout`, `--delay-factor`, and `--session-timeout`.
 
-### Using a Config File
+### Configuration file
 
 ```ini
 [cli]
 user = admin
+# password = your-device-password        # optional; plaintext storage
+# enable_password = your-enable-password  # optional; plaintext storage
 ip_file = inputs/ip_sample.txt
 cmd_file = inputs/show_sample.txt
 threads = 8
@@ -81,20 +91,23 @@ delay_factor = 2.0
 session_timeout = 30
 ```
 
-Save it as `data/templates/config_template.ini`, then run:
+Save it as `data/config.ini` (or any other relative path), then launch the CLI with:
 
 ```bash
-show-cli --config data/templates/config_template.ini
+show-cli --config config.ini
 ```
 
-CLI arguments always win over config defaults. Add extra keys—`command_timeout`, `delay_factor`, `session_timeout`, etc.—when you need slower devices to complete successfully. If the config lives under `data/`, just reference the filename:
+The loader searches the project root and `data/` directory automatically, so `--config config.ini` works for both `config.ini` and `data/config.ini`. Any CLI flag overrides the file value, allowing quick ad-hoc tweaks without editing the configuration. Extend the file with additional keys (`command_timeout`, `delay_factor`, `session_timeout`, etc.) whenever your devices need more relaxed timings. If you decide to store `password` or `enable_password` in the file, secure the file appropriately because the values are stored in plain text.
 
-```bash
-show-cli --config config.ini   # automatically searches the project root and data/
-```
+### Output folders
+
+By default each execution writes to `outputs/<subdir>`:
+- Per-device files (or a single `combined_output.txt` when `--combine` is used)
+- `connection_errors.txt` containing the full exception text per failure
+- `failed_ips.txt` capturing the IP list that needs attention
 
 ## Data Management
-- Put real/sensitive device lists in `data/raw/` (ignored by Git). Use the templates in `data/templates/` to track the required format.
+- Keep production or sensitive lists inside `data/raw/` (ignored by Git). The template files in `data/templates/` document the expected formats.
 - Place reusable examples in `data/inputs/` so contributors can reproduce behaviour.
 - Large command or IP lists should live in `data/raw/` and stay out of version control.
 - Use `data/templates/config_template.ini` as the baseline configuration example.
@@ -103,7 +116,7 @@ show-cli --config config.ini   # automatically searches the project root and dat
 ```bash
 python -m pytest
 ```
-The suite currently covers helper utilities (file readers, path resolution, config parsing). 
+The test suite currently exercises helper utilities (file readers, path resolution, configuration parsing). Add device-level mocks or integration scenarios as the CLI evolves.
 
 ## Documentation
 More detailed walkthroughs live under `docs/usage.md`.

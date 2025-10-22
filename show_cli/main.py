@@ -125,8 +125,10 @@ def merge_args_with_config(args: argparse.Namespace, config: Dict[str, str]) -> 
         "command_timeout": float,
         "delay_factor": float,
         "session_timeout": float,
+        "password": str,
+        "enable_password": str,
     }
-    nullable_fields = {"user", "ip_file", "cmds", "cmd_file", "output_dir"}
+    nullable_fields = {"user", "ip_file", "cmds", "cmd_file", "output_dir", "password", "enable_password"}
 
     for key, value in config.items():
         attr = key.replace("-", "_")
@@ -137,7 +139,7 @@ def merge_args_with_config(args: argparse.Namespace, config: Dict[str, str]) -> 
 
         sanitized: Any = value
         if isinstance(value, str):
-            sanitized = value.strip()
+            sanitized = value if attr in {"password", "enable_password"} else value.strip()
             if attr in nullable_fields and sanitized == "":
                 continue
 
@@ -319,6 +321,16 @@ def main() -> None:
         help="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).",
     )
     parser.add_argument(
+        "--password",
+        default=None,
+        help="Password for device login (consider using --config or environment variables instead of CLI).",
+    )
+    parser.add_argument(
+        "--enable-password",
+        default=None,
+        help="Enable/privileged password (consider using --config or environment variables instead of CLI).",
+    )
+    parser.add_argument(
         "--command-timeout",
         type=float,
         default=None,
@@ -346,7 +358,8 @@ def main() -> None:
     if args.config:
         try:
             config_values = load_config(Path(args.config))
-            LOGGER.debug("Config values loaded: %s", config_values)
+            safe_keys = [key for key in config_values if key not in {"password", "enable_password"}]
+            LOGGER.debug("Configuration keys loaded: %s", safe_keys)
         except Exception as exc:  # pylint: disable=broad-exception-caught
             LOGGER.error("Failed to load configuration %s: %s", args.config, exc)
             sys.exit(1)
@@ -390,8 +403,10 @@ def main() -> None:
     else:
         commands = [cmd.strip() for cmd in (args.cmds or "").split(",") if cmd.strip()]
 
-    password = getpass("Password: ")
-    enable = getpass("Enable Password: ")
+    password = args.password if args.password is not None else getpass("Password: ")
+    enable_password = (
+        args.enable_password if args.enable_password is not None else getpass("Enable Password: ")
+    )
 
     if args.ip_file:
         try:
@@ -422,7 +437,7 @@ def main() -> None:
         ip_list,
         args.user,
         password,
-        enable,
+        enable_password,
         commands,
         combine_output,
         output_dir,
